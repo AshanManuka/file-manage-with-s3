@@ -7,6 +7,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.util.IOUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,14 +38,6 @@ public class FileService {
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
-
-//    @Bean
-//    public AmazonS3 s3Client() {
-//        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-//        return AmazonS3ClientBuilder.standard()
-//                .withCredentials(new AWSStaticCredentialsProvider(credentials))
-//                .withRegion(region).build();
-//    }
 
 
 
@@ -65,5 +61,23 @@ public class FileService {
             System.out.println("Error converting multipartFile to file");
         }
         return convertedFile;
+    }
+
+    public byte[] downloadFile(String fileName) {
+        S3Object s3Object = s3Client.getObject(bucketName, fileName);
+        S3ObjectInputStream inputStream = s3Object.getObjectContent();
+        try {
+            byte[] content = IOUtils.toByteArray(inputStream);
+            return content;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    public String deleteFile(String fileName) {
+        s3Client.deleteObject(bucketName, fileName);
+        return fileName + " removed ...";
     }
 }
